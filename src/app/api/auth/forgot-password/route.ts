@@ -37,8 +37,10 @@ export async function POST(req: Request) {
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
       const resetUrl = `${baseUrl}/reset-password?token=${plainToken}`;
 
-      // Log development link for local testing
-      console.log(`\n🔑 [PASSWORD RESET LINK FOR DEV]: ${resetUrl}\n`);
+      // Log development link only in development mode
+      if (process.env.NODE_ENV === "development") {
+        console.log(`\n🔑 [PASSWORD RESET LINK FOR DEV]: ${resetUrl}\n`);
+      }
 
       // Attempt to send email via SMTP if configured
       try {
@@ -48,7 +50,9 @@ export async function POST(req: Request) {
           html: `<p>Hello,</p><p>You requested a password reset. Click the link below to set a new password:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link will expire in 30 minutes.</p>`,
         });
       } catch (e) {
-        console.warn("SMTP send skipped/failed, link logged to console.");
+        if (process.env.NODE_ENV === "development") {
+          console.warn("SMTP send skipped/failed, link logged to console.");
+        }
       }
     }
 
@@ -58,6 +62,6 @@ export async function POST(req: Request) {
       message: "If an account with that email exists, password reset instructions have been sent.",
     });
   } catch (err: any) {
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

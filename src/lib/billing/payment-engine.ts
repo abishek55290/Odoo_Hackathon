@@ -57,7 +57,16 @@ export async function getInvoicePaymentSummary(invoiceId: string): Promise<Payme
  * - Transitions invoice status to PAID if fully settled.
  */
 export async function recordPayment(input: RecordPaymentInput) {
-  const { invoiceId, amount, method, paidAt, note, recordedById } = input;
+  const { invoiceId, amount, paidAt, note } = input;
+  const rawMethod = (input.method || (input as any).paymentMethod || "CARD").toString().toUpperCase();
+  let method: PaymentMethod = PaymentMethod.CARD;
+  if (rawMethod === "CASH") method = PaymentMethod.CASH;
+  else if (rawMethod === "BANK_TRANSFER") method = PaymentMethod.BANK_TRANSFER;
+  else if (rawMethod === "UPI") method = PaymentMethod.UPI;
+  else if (rawMethod === "CHEQUE") method = PaymentMethod.CHEQUE;
+  else method = PaymentMethod.CARD;
+
+  const recordedById = input.recordedById || null;
 
   if (amount <= 0) {
     throw new Error("Payment amount must be greater than zero");

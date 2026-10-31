@@ -7,16 +7,20 @@ export async function POST(req: Request) {
     await requireRole("ADMIN", "STAFF");
 
     let asOfDate = new Date();
-    try {
-      const body = await req.json().catch(() => null);
-      if (body?.asOfDate) {
-        const parsed = new Date(body.asOfDate);
-        if (!isNaN(parsed.getTime())) {
-          asOfDate = parsed;
+    
+    // Only allow caller-specified asOfDate in authorized test/development environments
+    if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
+      try {
+        const body = await req.json().catch(() => null);
+        if (body?.asOfDate) {
+          const parsed = new Date(body.asOfDate);
+          if (!isNaN(parsed.getTime())) {
+            asOfDate = parsed;
+          }
         }
+      } catch {
+        // Body is optional
       }
-    } catch {
-      // Body is optional
     }
 
     const result = await runBilling(asOfDate);

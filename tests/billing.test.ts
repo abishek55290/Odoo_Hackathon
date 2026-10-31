@@ -366,22 +366,23 @@ async function runAllTests() {
   }
 }
 
-describe("Billing & Finance Integration Suite", () => {
-  it("runs billing integration suite if database is reachable", async () => {
-    try {
-      await db.$connect();
-    } catch (e: any) {
-      console.warn("Skipping live database billing tests (PostgreSQL offline):", e.message);
-      return;
-    }
-    const { failed } = await runAllTests();
-    expect(failed).toBe(0);
-  }, 60000);
-});
+if (typeof describe !== "undefined") {
+  describe("Billing & Finance Integration Suite", () => {
+    it("runs billing integration suite with live database", async () => {
+      const { failed } = await runAllTests();
+      expect(failed).toBe(0);
+    }, 60000);
+  });
+}
 
 if (typeof require !== "undefined" && require.main === module) {
-  runAllTests().then(({ failed }: any) => {
-    if (failed > 0) process.exit(1);
-    process.exit(0);
-  });
+  runAllTests()
+    .then(({ failed }) => {
+      if (failed > 0) process.exit(1);
+      process.exit(0);
+    })
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    });
 }

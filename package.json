@@ -4,7 +4,7 @@
   "private": true,
   "description": "Brightloop — Complete Subscription Management System for Odoo Hackathon",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "prisma generate && next build --webpack",
     "start": "next start",
     "typecheck": "node --stack-size=8192 ./node_modules/typescript/bin/tsc --noEmit",
