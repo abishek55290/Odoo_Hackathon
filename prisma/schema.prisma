@@ -1,0 +1,147 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Prisma Schema — Odoo Hackathon
+// Owner: Member 1 (Authentication, Database & Security)
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  VOID
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique                // normalised lowercase+trim on write
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role     @default(CUSTOMER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations (owned by Members 2/3/4 but declared here)
+  subscriptions       Subscription[]
+  invoices            Invoice[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Password Reset Token
+// ─────────────────────────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique                  // cryptographically random, hashed in DB
+  expiresAt DateTime
+  usedAt    DateTime?                          // set on first use → one-time
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Product  (Member 2 will extend)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  priceMonthly Decimal @db.Decimal(10, 2)
+  priceAnnual  Decimal @db.Decimal(10, 2)
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("products")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Subscription  (Member 2 will extend)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Subscription {
+  id        String             @id @default(cuid())
+  userId    String
+  productId String
+  status    SubscriptionStatus @default(ACTIVE)
+  startDate DateTime           @default(now())
+  endDate   DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+  invoices Invoice[]
+
+  @@index([userId])
+  @@index([productId])
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invoice  (Member 3 will extend)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Invoice {
+  id             String        @id @default(cuid())
+  userId         String
+  subscriptionId String?
+  invoiceNumber  String        @unique
+  status         InvoiceStatus @default(DRAFT)
+  amountDue      Decimal       @db.Decimal(10, 2)
+  amountPaid     Decimal       @db.Decimal(10, 2) @default(0)
+  dueDate        DateTime
+  paidAt         DateTime?
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@map("invoices")
+}
