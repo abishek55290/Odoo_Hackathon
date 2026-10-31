@@ -127,7 +127,7 @@ export default function ProductsPage() {
             Products & Variants Catalog
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Manage your service and product items, configure custom variant surcharges (e.g. Brand: Odoo +₹560)
+            Manage your service and product items, configure custom variant surcharges (e.g. Edition: Enterprise +₹560)
           </p>
         </div>
 
@@ -320,7 +320,7 @@ export default function ProductsPage() {
                   />
                   <input
                     type="text"
-                    placeholder="Value (e.g. Odoo)"
+                    placeholder="Value (e.g. Enterprise)"
                     value={variantValue}
                     onChange={(e) => setVariantValue(e.target.value)}
                     className="flex-1 px-2.5 py-1.5 border rounded-lg text-xs"

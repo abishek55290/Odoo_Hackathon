@@ -143,8 +143,8 @@ export function AppShell({ children, user }: AppShellProps) {
             <span className="font-bold tracking-tight text-gray-900 text-base">
               Brightloop
             </span>
-            <span className="block text-[10px] font-medium uppercase tracking-wider text-indigo-600 font-semibold">
-              Odoo Make-A-Ton 9.0
+            <span className="block text-[10px] font-medium uppercase tracking-wider text-gray-500 font-medium">
+              Subscription Cloud
             </span>
           </div>
         </div>
