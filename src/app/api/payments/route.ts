@@ -44,7 +44,7 @@ export async function GET(req: Request) {
       orderBy: { paidAt: "desc" },
     });
 
-    const formatted = payments.map((p) => ({
+    const formatted = payments.map((p: any) => ({
       ...p,
       amount: Number(p.amount),
       invoice: {

@@ -362,10 +362,26 @@ async function runAllTests() {
     console.log(`🏁 TEST RESULTS: ${passed} PASSED, ${failed} FAILED`);
     console.log("=================================================\n");
     await db.$disconnect();
-    if (failed > 0) {
-      process.exit(1);
-    }
+        return { passed, failed };
   }
 }
 
-runAllTests();
+describe("Billing & Finance Integration Suite", () => {
+  it("runs billing integration suite if database is reachable", async () => {
+    try {
+      await db.$connect();
+    } catch (e: any) {
+      console.warn("Skipping live database billing tests (PostgreSQL offline):", e.message);
+      return;
+    }
+    const { failed } = await runAllTests();
+    expect(failed).toBe(0);
+  }, 60000);
+});
+
+if (typeof require !== "undefined" && require.main === module) {
+  runAllTests().then(({ failed }: any) => {
+    if (failed > 0) process.exit(1);
+    process.exit(0);
+  });
+}

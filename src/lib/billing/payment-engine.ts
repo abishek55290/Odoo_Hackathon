@@ -33,7 +33,7 @@ export async function getInvoicePaymentSummary(invoiceId: string): Promise<Payme
 
   const total = Number(invoice.total);
   const totalPaid = Math.round(
-    invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0) * 100
+    invoice.payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0) * 100
   ) / 100;
   const remainingBalance = Math.max(0, Math.round((total - totalPaid) * 100) / 100);
   const isFullyPaid = remainingBalance <= 0;
@@ -63,7 +63,7 @@ export async function recordPayment(input: RecordPaymentInput) {
     throw new Error("Payment amount must be greater than zero");
   }
 
-  return await db.$transaction(async (tx) => {
+  return await db.$transaction(async (tx: any) => {
     const invoice = await tx.invoice.findUnique({
       where: { id: invoiceId },
       include: { payments: true },
@@ -79,7 +79,7 @@ export async function recordPayment(input: RecordPaymentInput) {
 
     const invoiceTotal = Number(invoice.total);
     const alreadyPaid = Math.round(
-      invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0) * 100
+      invoice.payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0) * 100
     ) / 100;
     const remainingBalance = Math.round((invoiceTotal - alreadyPaid) * 100) / 100;
 

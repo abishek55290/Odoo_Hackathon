@@ -14,7 +14,7 @@ export async function GET() {
       orderBy: { startDate: "desc" },
     });
 
-    const formatted = discounts.map((d) => ({
+    const formatted = discounts.map((d: any) => ({
       ...d,
       value: Number(d.value),
       minPurchase: d.minPurchase !== null ? Number(d.minPurchase) : null,

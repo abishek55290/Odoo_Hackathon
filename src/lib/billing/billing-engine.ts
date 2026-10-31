@@ -25,7 +25,7 @@ export interface BillingRunResult {
 /**
  * Generates the next sequential invoice number within a transaction.
  */
-async function generateNextInvoiceNumber(tx: Prisma.TransactionClient): Promise<string> {
+async function generateNextInvoiceNumber(tx: any): Promise<string> {
   const last = await tx.invoice.findFirst({
     orderBy: { createdAt: "desc" },
     select: { number: true },
@@ -58,7 +58,6 @@ async function generateNextInvoiceNumber(tx: Prisma.TransactionClient): Promise<
  * - Scans all ACTIVE, non-paused subscriptions where nextBillingDate <= now.
  * - Computes period bounds, applies eligible discounts & taxes.
  * - Creates invoice & lines, atomically advances nextBillingDate, and increments discount usage.
- * - Enforces uniqueness on (subscriptionId, periodStart) to prevent duplicate billing.
  */
 export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRunResult> {
   const result: BillingRunResult = {
@@ -72,8 +71,8 @@ export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRu
     errors: [],
   };
 
-  // 1. Fetch eligible due subscriptions
-  const dueSubscriptions = await db.subscription.findMany({
+  // 1. Fetch eligible active subscriptions whose billing date has arrived
+  const eligibleSubs = await db.subscription.findMany({
     where: {
       status: "ACTIVE",
       paused: false,
@@ -92,26 +91,30 @@ export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRu
         },
       },
     },
-    orderBy: {
-      nextBillingDate: "asc",
+  });
+
+  result.processedCount = eligibleSubs.length;
+
+  // 2. Fetch active discounts
+  const activeDiscounts = await db.discount.findMany({
+    where: {
+      startDate: { lte: asOfDate },
+      OR: [{ endDate: null }, { endDate: { gte: asOfDate } }],
     },
   });
 
-  result.processedCount = dueSubscriptions.length;
-
-  // 2. Fetch all active discounts
-  const activeDiscounts = await db.discount.findMany();
-
   // 3. Process each subscription
-  for (const sub of dueSubscriptions) {
+  for (const sub of eligibleSubs) {
     try {
-      if (!sub.nextBillingDate) {
-        result.skippedCount++;
-        continue;
-      }
+      // Calculate period start and end based on current billing date and plan period
+      const currentBillingDate = sub.nextBillingDate || sub.startDate;
+      const { periodStart, periodEnd } = calculateNextBillingPeriod(
+        currentBillingDate,
+        sub.plan.period
+      );
 
-      // Check expiry date
-      if (sub.expiryDate && sub.nextBillingDate >= sub.expiryDate) {
+      // Check whether subscription has expired
+      if (sub.expiryDate && periodStart >= sub.expiryDate) {
         if (sub.plan.autoClose) {
           await db.subscription.update({
             where: { id: sub.id },
@@ -122,12 +125,11 @@ export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRu
         continue;
       }
 
-      // Determine period
-      const { periodStart, periodEnd, nextBillingDate: advancedBillingDate } =
-        calculateNextBillingPeriod(sub.nextBillingDate, sub.plan.period, sub.startDate.getUTCDate());
+      // Target next billing date for next cycle
+      const advancedBillingDate = periodEnd;
 
-      // Critical duplicate check: does an invoice already exist for (subscriptionId, periodStart)?
-      const existingInvoice = await db.invoice.findUnique({
+      // Idempotency: "nothing billed twice". Check if invoice for this subscription & periodStart already exists
+      const existing = await db.invoice.findUnique({
         where: {
           subscriptionId_periodStart: {
             subscriptionId: sub.id,
@@ -136,11 +138,11 @@ export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRu
         },
       });
 
-      if (existingInvoice) {
+      if (existing) {
         result.duplicateCount++;
         result.skippedCount++;
-        // Advance nextBillingDate if stuck in past
-        if (sub.nextBillingDate <= periodStart) {
+        // If nextBillingDate is still in the past despite existing invoice, advance it
+        if (sub.nextBillingDate && sub.nextBillingDate <= asOfDate) {
           await db.subscription.update({
             where: { id: sub.id },
             data: { nextBillingDate: advancedBillingDate },
@@ -149,16 +151,14 @@ export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRu
         continue;
       }
 
-      // Prepare line items
-      const lineInputs: LineItemInput[] = sub.lines.map((l) => {
-        const basePrice = Number(l.unitPrice);
-        const extra = l.variant ? Number(l.variant.extraPrice) : 0;
-        const effectiveUnitPrice = basePrice + extra;
+      // Prepare line items: use the immutable line unitPrice snapshot (do not add extraPrice twice)
+      const lineInputs: LineItemInput[] = sub.lines.map((l: any) => {
+        const unitPrice = Number(l.unitPrice);
         return {
           productId: l.productId,
           quantity: l.quantity,
-          unitPrice: effectiveUnitPrice,
-          rawAmount: Math.round(effectiveUnitPrice * l.quantity * 100) / 100,
+          unitPrice,
+          rawAmount: Math.round(unitPrice * l.quantity * 100) / 100,
         };
       });
 
@@ -170,7 +170,7 @@ export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRu
       let calculatedDiscountTotal = 0;
       let calculatedTaxTotal = 0;
 
-      const invoiceLinesData = sub.lines.map((l, index) => {
+      const invoiceLinesData = sub.lines.map((l: any, index: number) => {
         const input = lineInputs[index];
         const lineDiscount = discountResult.lineDiscounts[index];
         const taxableAmount = Math.max(0, Math.round((input.rawAmount - lineDiscount) * 100) / 100);
@@ -203,7 +203,7 @@ export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRu
       const dueDate = calculateDueDate(asOfDate, sub.paymentTerms);
 
       // Execute in atomic transaction
-      const createdInvoice = await db.$transaction(async (tx) => {
+      const createdInvoice = await db.$transaction(async (tx: any) => {
         const invoiceNumber = await generateNextInvoiceNumber(tx);
 
         const inv = await tx.invoice.create({
@@ -261,7 +261,7 @@ export async function runBilling(asOfDate: Date = new Date()): Promise<BillingRu
         periodEnd,
         total: invoiceTotal,
       });
-    } catch (err: unknown) {
+    } catch (err: any) {
       // Prisma duplicate key code is P2002
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
         result.duplicateCount++;

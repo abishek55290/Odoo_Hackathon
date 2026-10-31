@@ -13,7 +13,7 @@ export async function GET() {
       },
     });
 
-    const formatted = taxes.map((t) => {
+    const formatted = taxes.map((t: any) => {
       const rate = Number(t.ratePercent);
       return {
         id: t.id,

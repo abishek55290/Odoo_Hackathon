@@ -50,9 +50,9 @@ export async function getInvoices(filters: InvoiceFilters = {}) {
     }),
   ]);
 
-  const items = invoices.map((inv) => {
+  const items = invoices.map((inv: any) => {
     const total = Number(inv.total);
-    const paid = inv.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const paid = inv.payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
     const balance = Math.max(0, Math.round((total - paid) * 100) / 100);
     const isOverdue = inv.status !== "PAID" && inv.status !== "CANCELLED" && inv.dueDate < new Date();
 
@@ -103,7 +103,7 @@ export async function getInvoiceById(id: string) {
   if (!invoice) return null;
 
   const total = Number(invoice.total);
-  const paid = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const paid = invoice.payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
   const balance = Math.max(0, Math.round((total - paid) * 100) / 100);
   const isOverdue = invoice.status !== "PAID" && invoice.status !== "CANCELLED" && invoice.dueDate < new Date();
 
@@ -116,14 +116,14 @@ export async function getInvoiceById(id: string) {
     totalPaid: paid,
     outstandingBalance: balance,
     isOverdue,
-    lines: invoice.lines.map((l) => ({
+    lines: invoice.lines.map((l: any) => ({
       ...l,
       unitPrice: Number(l.unitPrice),
       taxPercent: Number(l.taxPercent),
       discountAmount: Number(l.discountAmount),
       amount: Number(l.amount),
     })),
-    payments: invoice.payments.map((p) => ({
+    payments: invoice.payments.map((p: any) => ({
       ...p,
       amount: Number(p.amount),
     })),
@@ -192,7 +192,7 @@ export async function sendInvoiceEmail(id: string) {
 
   const linesHtml = invoice.lines
     .map(
-      (l) => `
+      (l: any) => `
       <tr>
         <td style="padding: 8px; border-bottom: 1px solid #ddd;">${l.description}</td>
         <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${l.quantity}</td>
