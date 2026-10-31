@@ -4,5 +4,6 @@ import { authOptions } from "@/lib/auth";
 
 export default async function Home() {
   const s = await getServerSession(authOptions);
-  redirect(s?.user.role === "CUSTOMER" ? "/portal" : "/reports");
+  if (!s) redirect("/login");
+  redirect(s.user.role === "CUSTOMER" ? "/portal" : "/reports");
 }

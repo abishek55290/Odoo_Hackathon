@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import { StatusBadge } from "@/components/ui";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -29,11 +28,11 @@ export function AppShell({ children, user }: AppShellProps) {
   // Role-aware navigation definitions
   const adminStaffNav = [
     {
-      href: "/dashboard",
-      label: "Dashboard",
+      href: "/reports",
+      label: "Dashboard & KPIs",
       icon: (
         <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
     },
@@ -48,10 +47,19 @@ export function AppShell({ children, user }: AppShellProps) {
     },
     {
       href: "/plans",
-      label: "Pricing Plans",
+      label: "Subscription Plans",
       icon: (
         <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+        </svg>
+      ),
+    },
+    {
+      href: "/quotes",
+      label: "Quotation Templates",
+      icon: (
+        <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
     },
@@ -60,7 +68,7 @@ export function AppShell({ children, user }: AppShellProps) {
       label: "Subscriptions",
       icon: (
         <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
       ),
     },
@@ -69,16 +77,34 @@ export function AppShell({ children, user }: AppShellProps) {
       label: "Invoices",
       icon: (
         <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
         </svg>
       ),
     },
     {
       href: "/payments",
-      label: "Payments",
+      label: "Payments Ledger",
       icon: (
         <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+    },
+    {
+      href: "/taxes",
+      label: "Tax Rules",
+      icon: (
+        <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+        </svg>
+      ),
+    },
+    {
+      href: "/discounts",
+      label: "Discounts",
+      icon: (
+        <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
         </svg>
       ),
     },
@@ -110,30 +136,30 @@ export function AppShell({ children, user }: AppShellProps) {
       <aside className="hidden lg:flex w-64 flex-col border-r border-gray-200 bg-white">
         {/* Brand Header */}
         <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-6">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-gray-900 text-white font-bold shadow-xs">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold shadow-sm">
             B
           </div>
           <div>
             <span className="font-bold tracking-tight text-gray-900 text-base">
               Brightloop
             </span>
-            <span className="block text-[10px] font-medium uppercase tracking-wider text-gray-400">
-              Subscription Cloud
+            <span className="block text-[10px] font-medium uppercase tracking-wider text-indigo-600 font-semibold">
+              Odoo Make-A-Ton 9.0
             </span>
           </div>
         </div>
 
         {/* Navigation list */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
           <div>
             <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
-              {user.role === "CUSTOMER" ? "Self Service" : "Core Modules"}
+              {user.role === "CUSTOMER" ? "Self Service Portal" : "Management Console"}
             </p>
             <nav className="space-y-1">
               {navigationItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== "/dashboard" &&
+                  (item.href !== "/reports" &&
                     item.href !== "/portal" &&
                     pathname.startsWith(item.href));
 
@@ -144,7 +170,7 @@ export function AppShell({ children, user }: AppShellProps) {
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-gray-900 text-white shadow-xs"
+                        ? "bg-indigo-600 text-white shadow-xs font-semibold"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     )}
                   >
@@ -160,10 +186,10 @@ export function AppShell({ children, user }: AppShellProps) {
         </div>
 
         {/* User Card & Sign Out */}
-        <div className="border-t border-gray-200 p-4 bg-gray-50/50">
+        <div className="border-t border-gray-200 p-4 bg-gray-50/70">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700 uppercase">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold uppercase">
                 {user.name.charAt(0)}
               </div>
               <div className="truncate">
@@ -181,7 +207,7 @@ export function AppShell({ children, user }: AppShellProps) {
 
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700 transition-colors"
+              className="rounded-md p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700 transition-colors"
               title="Sign out"
             >
               <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -202,7 +228,7 @@ export function AppShell({ children, user }: AppShellProps) {
           <div className="relative flex w-72 flex-col bg-white shadow-xl">
             <div className="flex h-16 items-center justify-between border-b px-6">
               <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-gray-900 text-white font-bold">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold">
                   B
                 </div>
                 <span className="font-bold text-gray-900">Brightloop</span>
@@ -224,7 +250,7 @@ export function AppShell({ children, user }: AppShellProps) {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
                     pathname === item.href
-                      ? "bg-gray-900 text-white"
+                      ? "bg-indigo-600 text-white font-semibold"
                       : "text-gray-600 hover:bg-gray-100"
                   )}
                 >
@@ -266,19 +292,25 @@ export function AppShell({ children, user }: AppShellProps) {
 
             {/* Breadcrumb / Title */}
             <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-              <span>Brightloop</span>
+              <span className="font-semibold text-gray-800">Brightloop</span>
               <span>/</span>
-              <span className="capitalize text-gray-900 font-semibold">
+              <span className="capitalize text-indigo-600 font-semibold">
                 {pathname.replace("/", "") || "Home"}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Environment Badge */}
-            <span className="hidden sm:inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 border border-gray-200">
-              Odoo Make-A-Ton
-            </span>
+            {/* Quick Link to Customer Portal for testing */}
+            {user.role !== "CUSTOMER" && (
+              <Link
+                href="/portal"
+                className="hidden sm:inline-flex items-center rounded-lg bg-gray-50 hover:bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-200 transition"
+                title="View customer portal view"
+              >
+                Switch to Customer View
+              </Link>
+            )}
 
             {/* User pill */}
             <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
@@ -292,7 +324,7 @@ export function AppShell({ children, user }: AppShellProps) {
               </span>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-xs text-gray-600 hover:text-gray-900 font-medium ml-1"
+                className="text-xs text-gray-600 hover:text-red-600 font-medium ml-1 transition"
               >
                 Sign out
               </button>
