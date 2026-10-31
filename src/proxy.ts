@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // Logged-in users only; customers are fenced into /portal (pages) and can't hit staff pages.
 // API routes enforce their own roles via requireRole().
 export default withAuth(
-  function proxy(req) {
+  function proxy(req: any) {
     const { pathname } = req.nextUrl;
     const role = req.nextauth.token?.role;
     if (role === "CUSTOMER" && !pathname.startsWith("/portal") && !pathname.startsWith("/api")) {

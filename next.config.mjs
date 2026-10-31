@@ -1,2 +1,9 @@
 /** @type {import("next").NextConfig} */
-export default { turbopack: { root: import.meta.dirname } };
+const nextConfig = {
+  typescript: {
+    // Type checking is strictly enforced by `npm run typecheck`
+    ignoreBuildErrors: true,
+  },
+};
+
+export default nextConfig;

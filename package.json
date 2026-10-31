@@ -5,9 +5,9 @@
   "description": "Brightloop — Complete Subscription Management System for Odoo Hackathon",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && next build --webpack",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node --stack-size=8192 ./node_modules/typescript/bin/tsc --noEmit",
     "server:dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "server:start": "node dist/server.js",
     "db:push": "prisma db push",
@@ -24,6 +24,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
+    "@next/swc-wasm-nodejs": "^16.4.3",
+    "@next/swc-win32-x64-msvc": "^16.4.3",
     "@prisma/client": "6.19.3",
     "bcryptjs": "3.0.3",
     "class-variance-authority": "^0.7.1",
