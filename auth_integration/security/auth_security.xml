@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ── Record Rules: Users can only see their own tokens ──────────── -->
+        <record id="rule_auth_token_own" model="ir.rule">
+            <field name="name">Auth Token: Users see own tokens</field>
+            <field name="model_id" ref="model_auth_token"/>
+            <field name="domain_force">[('user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Admins bypass the own-record rule -->
+        <record id="rule_auth_token_admin" model="ir.rule">
+            <field name="name">Auth Token: Admins see all tokens</field>
+            <field name="model_id" ref="model_auth_token"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('base.group_system'))]"/>
+        </record>
+
+        <!-- ── Record Rules: Sessions ─────────────────────────────────────── -->
+        <record id="rule_auth_session_own" model="ir.rule">
+            <field name="name">Auth Session: Users see own sessions</field>
+            <field name="model_id" ref="model_auth_session"/>
+            <field name="domain_force">[('user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+
+        <record id="rule_auth_session_admin" model="ir.rule">
+            <field name="name">Auth Session: Admins see all sessions</field>
+            <field name="model_id" ref="model_auth_session"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('base.group_system'))]"/>
+        </record>
+
+    </data>
+</odoo>

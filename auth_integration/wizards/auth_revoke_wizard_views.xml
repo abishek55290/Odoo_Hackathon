@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_auth_revoke_wizard_form" model="ir.ui.view">
+        <field name="name">auth.revoke.wizard.form</field>
+        <field name="model">auth.revoke.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Revoke Tokens">
+                <group>
+                    <field name="token_count" readonly="1" string="Tokens selected"/>
+                    <field name="reason" placeholder="Reason for revocation…"/>
+                </group>
+                <footer>
+                    <button name="action_confirm_revoke" type="object"
+                            string="Revoke Tokens" class="btn-danger"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auth_revoke_wizard" model="ir.actions.act_window">
+        <field name="name">Revoke Tokens</field>
+        <field name="res_model">auth.revoke.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_auth_token"/>
+        <field name="binding_view_types">list</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_auth_oauth_provider_list" model="ir.ui.view">
+        <field name="name">auth.oauth.provider.list</field>
+        <field name="model">auth.oauth.provider</field>
+        <field name="arch" type="xml">
+            <list string="OAuth2 Providers" editable="top">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="provider_type" widget="badge"/>
+                <field name="client_id"/>
+                <field name="scope"/>
+                <field name="token_count"/>
+                <field name="use_pkce" widget="boolean_toggle"/>
+                <field name="auto_create_user" widget="boolean_toggle"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auth_oauth_provider_form" model="ir.ui.view">
+        <field name="name">auth.oauth.provider.form</field>
+        <field name="model">auth.oauth.provider</field>
+        <field name="arch" type="xml">
+            <form string="OAuth2 Provider">
+                <sheet>
+                    <widget name="web_ribbon" title="Inactive" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Provider Name…"/></h1>
+                        <h3>
+                            <field name="provider_type" widget="badge"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group string="OAuth2 Credentials">
+                            <field name="client_id"/>
+                            <field name="client_secret" password="True"/>
+                            <field name="scope"/>
+                            <field name="redirect_uri"/>
+                        </group>
+                        <group string="Options">
+                            <field name="use_pkce"/>
+                            <field name="auto_create_user"/>
+                            <field name="default_group_ids" widget="many2many_tags"/>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Endpoints">
+                            <group>
+                                <field name="authorization_url"/>
+                                <field name="token_url"/>
+                                <field name="userinfo_url"/>
+                                <field name="revoke_url"/>
+                                <field name="jwks_url"/>
+                            </group>
+                        </page>
+                        <page string="Attribute Mapping">
+                            <group>
+                                <field name="attribute_mapping" widget="ace"
+                                       options="{'mode': 'json'}"/>
+                            </group>
+                        </page>
+                        <page string="Statistics">
+                            <group>
+                                <field name="token_count" readonly="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auth_oauth_provider" model="ir.actions.act_window">
+        <field name="name">OAuth2 Providers</field>
+        <field name="res_model">auth.oauth.provider</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

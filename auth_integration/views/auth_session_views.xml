@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_auth_session_list" model="ir.ui.view">
+        <field name="name">auth.session.list</field>
+        <field name="model">auth.session</field>
+        <field name="arch" type="xml">
+            <list string="Sessions"
+                  decoration-danger="state == 'terminated'"
+                  decoration-warning="state == 'expired'"
+                  decoration-success="state == 'active'">
+                <field name="session_id" string="Session ID"/>
+                <field name="user_id"/>
+                <field name="device_type" widget="badge"/>
+                <field name="auth_method" widget="badge"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-warning="state == 'expired'"
+                       decoration-danger="state == 'terminated'"/>
+                <field name="ip_address"/>
+                <field name="login_at"/>
+                <field name="last_activity"/>
+                <field name="duration"/>
+                <field name="mfa_verified" widget="boolean_toggle"/>
+                <button name="action_terminate" type="object" string="Force Logout"
+                        icon="fa-sign-out" invisible="state != 'active'"
+                        confirm="Force-terminate this session?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auth_session_form" model="ir.ui.view">
+        <field name="name">auth.session.form</field>
+        <field name="model">auth.session</field>
+        <field name="arch" type="xml">
+            <form string="Session">
+                <header>
+                    <button name="action_terminate" type="object"
+                            string="Force Terminate Session"
+                            class="btn-danger"
+                            invisible="state != 'active'"
+                            confirm="This will log the user out immediately. Continue?"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="active,expired,terminated"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="session_id" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identity">
+                            <field name="user_id"/>
+                            <field name="token_id"/>
+                            <field name="auth_method"/>
+                            <field name="mfa_verified"/>
+                        </group>
+                        <group string="Lifecycle">
+                            <field name="login_at"/>
+                            <field name="last_activity"/>
+                            <field name="logout_at"/>
+                            <field name="expires_at"/>
+                            <field name="duration"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Device / Client">
+                            <field name="device_type"/>
+                            <field name="ip_address"/>
+                            <field name="user_agent"/>
+                            <field name="device_fingerprint"/>
+                            <field name="geolocation"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_auth_session_search" model="ir.ui.view">
+        <field name="name">auth.session.search</field>
+        <field name="model">auth.session</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id"/>
+                <field name="ip_address"/>
+                <filter string="Active" name="active" domain="[('state','=','active')]"/>
+                <filter string="Expired" name="expired" domain="[('state','=','expired')]"/>
+                <filter string="Terminated" name="terminated" domain="[('state','=','terminated')]"/>
+                <separator/>
+                <filter string="MFA Verified" name="mfa" domain="[('mfa_verified','=',True)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="User" name="group_user" context="{'group_by': 'user_id'}"/>
+                    <filter string="Device" name="group_device" context="{'group_by': 'device_type'}"/>
+                    <filter string="Auth Method" name="group_method" context="{'group_by': 'auth_method'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_auth_session" model="ir.actions.act_window">
+        <field name="name">Sessions</field>
+        <field name="res_model">auth.session</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_auth_session_search"/>
+        <field name="context">{'search_default_active': 1}</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ── Top-level App Menu ──────────────────────────────────────────── -->
+    <menuitem id="menu_auth_root"
+              name="Authentication"
+              sequence="90"
+              web_icon="auth_integration,static/description/icon.png"/>
+
+    <!-- ── Token Management ───────────────────────────────────────────── -->
+    <menuitem id="menu_auth_tokens"
+              name="Tokens"
+              parent="menu_auth_root"
+              sequence="10"/>
+
+    <menuitem id="menu_auth_token_list"
+              name="All Tokens"
+              parent="menu_auth_tokens"
+              action="action_auth_token"
+              sequence="10"/>
+
+    <!-- ── Session Management ─────────────────────────────────────────── -->
+    <menuitem id="menu_auth_sessions"
+              name="Sessions"
+              parent="menu_auth_root"
+              sequence="20"/>
+
+    <menuitem id="menu_auth_session_list"
+              name="Active Sessions"
+              parent="menu_auth_sessions"
+              action="action_auth_session"
+              sequence="10"/>
+
+    <!-- ── OAuth2 Providers ───────────────────────────────────────────── -->
+    <menuitem id="menu_auth_oauth"
+              name="OAuth2"
+              parent="menu_auth_root"
+              sequence="30"/>
+
+    <menuitem id="menu_auth_oauth_providers"
+              name="Providers"
+              parent="menu_auth_oauth"
+              action="action_auth_oauth_provider"
+              sequence="10"/>
+
+    <!-- ── Audit & Security ───────────────────────────────────────────── -->
+    <menuitem id="menu_auth_audit"
+              name="Audit &amp; Security"
+              parent="menu_auth_root"
+              sequence="40"/>
+
+    <menuitem id="menu_auth_audit_log"
+              name="Audit Log"
+              parent="menu_auth_audit"
+              action="action_auth_audit_log"
+              sequence="10"/>
+
+</odoo>
