@@ -33,7 +33,7 @@ async function runQATests() {
 
   let calculatedMRR = 0;
   for (const sub of activeSubs) {
-    const lineTotal = sub.lines.reduce((s, l) => s + Number(l.amount), 0);
+    const lineTotal = sub.lines.reduce((s: number, l: any) => s + Number(l.amount), 0);
     const amount = lineTotal > 0 ? lineTotal : Number(sub.plan.price);
     const mrr = normalizeToMonthly(amount, sub.plan.period);
     calculatedMRR += mrr;
@@ -58,7 +58,7 @@ async function runQATests() {
 
   for (const inv of allInvoices) {
     const total = Number(inv.total);
-    const paid = inv.payments.reduce((s, p) => s + Number(p.amount), 0);
+    const paid = inv.payments.reduce((s: number, p: any) => s + Number(p.amount), 0);
     const outstanding = Math.max(0, total - paid);
     totalBilled += total;
     totalOutstanding += outstanding;
@@ -71,7 +71,7 @@ async function runQATests() {
   }
 
   const allPayments = await db.payment.findMany();
-  const collectedRevenue = allPayments.reduce((s, p) => s + Number(p.amount), 0);
+  const collectedRevenue = allPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
   console.log(`  ✓ Total Collected Revenue: $${collectedRevenue.toFixed(2)}`);
   console.log(`  ✓ Total Outstanding Balance: $${totalOutstanding.toFixed(2)}`);
   console.log(`  ✓ Overdue Invoice Count: ${overdueCount}`);
@@ -95,8 +95,8 @@ async function runQATests() {
   console.log(`  • Customer 2 (${cust2.email}): ${cust2Subs.length} subscriptions, ${cust2Invs.length} invoices`);
 
   // Verify no overlap
-  const overlapSubs = cust1Subs.filter((s) => cust2Subs.some((s2) => s2.id === s.id));
-  const overlapInvs = cust1Invs.filter((i) => cust2Invs.some((i2) => i2.id === i.id));
+  const overlapSubs = cust1Subs.filter((s: any) => cust2Subs.some((s2: any) => s2.id === s.id));
+  const overlapInvs = cust1Invs.filter((i: any) => cust2Invs.some((i2: any) => i2.id === i.id));
 
   if (overlapSubs.length > 0 || overlapInvs.length > 0) {
     console.error("  ❌ SECURITY FAILURE: Cross-tenant data leakage detected!");
