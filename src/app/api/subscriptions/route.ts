@@ -87,16 +87,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden: You cannot create subscriptions for other customers" }, { status: 403 });
     }
 
-    // 1. Fetch Plan
+    // 1. Fetch Plan & check availability window
     const plan = await db.plan.findUnique({ where: { id: planId } });
     if (!plan) {
       return NextResponse.json({ error: "Selected plan does not exist" }, { status: 400 });
     }
 
+    const now = new Date();
+    if (plan.startDate && new Date(plan.startDate) > now) {
+      return NextResponse.json({ error: "Selected plan is not yet available for subscription" }, { status: 400 });
+    }
+    if (plan.endDate && new Date(plan.endDate) < now) {
+      return NextResponse.json({ error: "Selected plan has expired and cannot create new subscriptions" }, { status: 400 });
+    }
+
     // 2. Validate Customer
     const customer = await db.user.findUnique({ where: { id: customerId } });
-    if (!customer) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 400 });
+    if (!customer || !customer.isActive) {
+      return NextResponse.json({ error: "Customer not found or inactive" }, { status: 400 });
     }
 
     // 3. Process Lines and calculate immutable snapshot prices
@@ -145,20 +153,41 @@ export async function POST(req: Request) {
       });
     }
 
-    // Generate unique subscription number e.g. SUB-0001
-    const count = await db.subscription.count();
-    const number = `SUB-${(count + 1).toString().padStart(4, "0")}`;
+    // Collision-safe unique subscription numbering
+    let nextSeq = 1;
+    const lastSub = await db.subscription.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { number: true },
+    });
+    if (lastSub?.number?.startsWith("SUB-")) {
+      const parsedNum = parseInt(lastSub.number.replace("SUB-", ""), 10);
+      if (!isNaN(parsedNum)) nextSeq = parsedNum + 1;
+    }
+    let numberCandidate = `SUB-${String(nextSeq).padStart(4, "0")}`;
+    while (await db.subscription.findUnique({ where: { number: numberCandidate } })) {
+      nextSeq++;
+      numberCandidate = `SUB-${String(nextSeq).padStart(4, "0")}`;
+    }
+
+    // Determine quotation validity
+    let validUntilDate = quoteValidUntil ? new Date(quoteValidUntil) : null;
+    if (!validUntilDate && templateId) {
+      const template = await db.quotationTemplate.findUnique({ where: { id: templateId } });
+      if (template) {
+        validUntilDate = new Date(Date.now() + template.validityDays * 24 * 60 * 60 * 1000);
+      }
+    }
 
     const subscription = await db.subscription.create({
       data: {
-        number,
+        number: numberCandidate,
         customerId,
         planId,
         templateId: templateId || null,
         startDate: new Date(startDate),
         expiryDate: expiryDate ? new Date(expiryDate) : null,
         paymentTerms,
-        quoteValidUntil: quoteValidUntil ? new Date(quoteValidUntil) : null,
+        quoteValidUntil: validUntilDate,
         status: "DRAFT",
         lines: {
           create: processedLines,

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SubscriptionStatus } from "@prisma/client";
+import { calculateNextBillingPeriod } from "@/lib/billing/date-utils";
 
 const transitionSchema = z.object({
   action: z.enum(["TO_QUOTATION", "CONFIRM", "ACTIVATE", "PAUSE", "RESUME", "CLOSE", "RENEW"]),
@@ -48,13 +49,8 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
     let nextBillingDate = subscription.nextBillingDate;
     let isPaused = subscription.paused;
 
-    const calculateNextBilling = (base: Date, period: string) => {
-      const d = new Date(base);
-      if (period === "DAILY") d.setDate(d.getDate() + 1);
-      else if (period === "WEEKLY") d.setDate(d.getDate() + 7);
-      else if (period === "MONTHLY") d.setMonth(d.getMonth() + 1);
-      else if (period === "YEARLY") d.setFullYear(d.getFullYear() + 1);
-      return d;
+    const calculateNextBilling = (base: Date, period: any) => {
+      return calculateNextBillingPeriod(base, period).periodEnd;
     };
 
     switch (action) {

@@ -9,8 +9,8 @@ const createPlanSchema = z.object({
   price: z.number().nonnegative("Price must be positive"),
   period: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).default("MONTHLY"),
   minQuantity: z.number().int().min(1).default(1),
-  startDate: z.string().datetime().optional().default(() => new Date().toISOString()),
-  endDate: z.string().datetime().optional().nullable(),
+  startDate: z.string().optional().default(() => new Date().toISOString()),
+  endDate: z.string().optional().nullable(),
   autoClose: z.boolean().default(false),
   closable: z.boolean().default(true),
   pausable: z.boolean().default(false),
@@ -51,14 +51,21 @@ export async function POST(req: Request) {
 
     const { name, price, period, minQuantity, startDate, endDate, autoClose, closable, pausable, renewable } = parsed.data;
 
+    // Validation: End date cannot precede start date
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : null;
+    if (end && end < start) {
+      return NextResponse.json({ error: "Plan end date cannot precede start date" }, { status: 400 });
+    }
+
     const plan = await db.plan.create({
       data: {
         name,
         price,
         period: period as BillingPeriod,
         minQuantity,
-        startDate: new Date(startDate),
-        endDate: endDate ? new Date(endDate) : null,
+        startDate: start,
+        endDate: end,
         autoClose,
         closable,
         pausable,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Repeat, Plus, AlertCircle } from "lucide-react";
+import { Repeat, Plus, AlertCircle, X } from "lucide-react";
 
 interface Plan {
   id: string;
@@ -13,6 +13,8 @@ interface Plan {
   closable: boolean;
   pausable: boolean;
   renewable: boolean;
+  startDate?: string;
+  endDate?: string | null;
   _count?: { subscriptions: number };
 }
 
@@ -26,6 +28,9 @@ export default function PlansPage() {
   const [price, setPrice] = useState("");
   const [period, setPeriod] = useState("MONTHLY");
   const [minQuantity, setMinQuantity] = useState("1");
+  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState("");
+  const [autoClose, setAutoClose] = useState(false);
   const [pausable, setPausable] = useState(false);
   const [closable, setClosable] = useState(true);
   const [renewable, setRenewable] = useState(true);
@@ -60,6 +65,9 @@ export default function PlansPage() {
           price: parseFloat(price) || 0,
           period,
           minQuantity: parseInt(minQuantity, 10) || 1,
+          startDate: startDate ? new Date(startDate).toISOString() : undefined,
+          endDate: endDate ? new Date(endDate).toISOString() : null,
+          autoClose,
           pausable,
           closable,
           renewable,
@@ -73,6 +81,7 @@ export default function PlansPage() {
         setShowModal(false);
         setName("");
         setPrice("");
+        setEndDate("");
         fetchPlans();
       }
     } catch {
@@ -101,6 +110,13 @@ export default function PlansPage() {
         </button>
       </div>
 
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           <div className="col-span-full text-center py-16 text-gray-400 text-sm">Loading plans...</div>
@@ -124,45 +140,63 @@ export default function PlansPage() {
 
                 <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
                 <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-gray-900">₹{Number(plan.price).toFixed(2)}</span>
-                  <span className="text-xs text-gray-500 font-medium">/{plan.period.toLowerCase()}</span>
+                  <span className="text-3xl font-extrabold font-mono text-gray-900">
+                    ₹{Number(plan.price).toFixed(2)}
+                  </span>
+                  <span className="text-xs text-gray-500">/ {plan.period.toLowerCase()}</span>
                 </div>
 
-                <div className="mt-6 space-y-2 border-t pt-4 text-xs text-gray-600">
+                <div className="mt-4 pt-3 border-t space-y-1.5 text-xs text-gray-600">
                   <div className="flex justify-between">
-                    <span>Minimum Quantity:</span>
-                    <span className="font-semibold text-gray-800">{plan.minQuantity} units</span>
+                    <span>Min Commitment:</span>
+                    <span className="font-semibold text-gray-900">{plan.minQuantity} unit(s)</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Allow Pausing:</span>
-                    <span className="font-semibold text-gray-800">{plan.pausable ? "Yes" : "No"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Allow Early Close:</span>
-                    <span className="font-semibold text-gray-800">{plan.closable ? "Yes" : "No"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Allow Renewal:</span>
-                    <span className="font-semibold text-gray-800">{plan.renewable ? "Yes" : "No"}</span>
-                  </div>
+                  {plan.endDate && (
+                    <div className="flex justify-between text-amber-700 font-medium">
+                      <span>Available Until:</span>
+                      <span>{new Date(plan.endDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              <div className="mt-6 pt-3 border-t flex flex-wrap gap-1.5">
+                {plan.pausable && (
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] rounded font-medium">
+                    Pausable
+                  </span>
+                )}
+                {plan.closable && (
+                  <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] rounded font-medium">
+                    Early Closure
+                  </span>
+                )}
+                {plan.renewable && (
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] rounded font-medium">
+                    Auto-Renewable
+                  </span>
+                )}
+                {plan.autoClose && (
+                  <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] rounded font-medium">
+                    Auto-Close on Expiry
+                  </span>
+                )}
               </div>
             </div>
           ))
         )}
       </div>
 
+      {/* Creation Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Create Subscription Plan</h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h2 className="text-base font-bold text-gray-900">Create Subscription Plan</h2>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
@@ -170,7 +204,7 @@ export default function PlansPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Growth Monthly"
+                  placeholder="e.g. Standard Monthly"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -179,12 +213,12 @@ export default function PlansPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Price (₹)</label>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Base Price (₹)</label>
                   <input
                     type="number"
-                    required
-                    min="0"
                     step="0.01"
+                    min="0"
+                    required
                     placeholder="2500.00"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
@@ -196,13 +230,35 @@ export default function PlansPage() {
                   <select
                     value={period}
                     onChange={(e) => setPeriod(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
                   >
                     <option value="DAILY">Daily</option>
                     <option value="WEEKLY">Weekly</option>
                     <option value="MONTHLY">Monthly</option>
                     <option value="YEARLY">Yearly</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Available Start</label>
+                  <input
+                    type="date"
+                    required
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Available End (Optional)</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
                 </div>
               </div>
 
@@ -244,6 +300,15 @@ export default function PlansPage() {
                     className="rounded text-indigo-600"
                   />
                   Allow Renewal
+                </label>
+                <label className="flex items-center gap-2 text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoClose}
+                    onChange={(e) => setAutoClose(e.target.checked)}
+                    className="rounded text-indigo-600"
+                  />
+                  Auto-Close When Plan Expires
                 </label>
               </div>
 

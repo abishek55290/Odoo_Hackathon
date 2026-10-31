@@ -54,9 +54,30 @@ export async function POST(req: Request) {
 
     const { name, planId, validityDays, lines } = parsed.data;
 
+    // Validate plan
     const plan = await db.plan.findUnique({ where: { id: planId } });
     if (!plan) {
       return NextResponse.json({ error: "Selected plan does not exist" }, { status: 400 });
+    }
+
+    // Validate each line's product and product-variant relationship
+    for (const l of lines) {
+      const prod = await db.product.findUnique({
+        where: { id: l.productId },
+        include: { variants: true },
+      });
+      if (!prod) {
+        return NextResponse.json({ error: `Product with ID ${l.productId} does not exist` }, { status: 400 });
+      }
+      if (l.variantId) {
+        const variantMatches = prod.variants.some((v: any) => v.id === l.variantId);
+        if (!variantMatches) {
+          return NextResponse.json(
+            { error: `Variant ${l.variantId} does not belong to product "${prod.name}"` },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     const template = await db.quotationTemplate.create({
