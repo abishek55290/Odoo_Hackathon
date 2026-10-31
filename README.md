@@ -1,158 +1,67 @@
-# Authentication & Integration — Odoo Hackathon Module
+# Brightloop — Subscription Management System (Odoo Hackathon)
 
 ![Odoo 17](https://img.shields.io/badge/Odoo-17.0-875A7B?logo=odoo)
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python)
-![License](https://img.shields.io/badge/License-LGPL--3-blue)
+![Next.js](https://img.shields.io/badge/Next.js-14%2F15-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?logo=typescript)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma)
+![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwind-css)
 
-A production-grade **Authentication & Integration** Odoo 17 module built for the Odoo Hackathon.
-
----
-
-## ✨ Features
-
-| Category | Capabilities |
-|---|---|
-| **JWT Tokens** | HS256/RS256 signed access tokens, configurable TTL, blacklisting |
-| **Refresh Tokens** | Opaque long-lived tokens with automatic rotation |
-| **API Keys** | Non-expiring scoped API keys (`aik_…` prefix) |
-| **OAuth2** | Authorization Code Flow with PKCE for Google, GitHub, Microsoft & custom providers |
-| **Session Management** | Server-side sessions with device tracking, force-logout, concurrent session limiting |
-| **TOTP / MFA** | RFC 6238 TOTP with QR code enrollment via `pyotp` |
-| **Brute-Force Protection** | Configurable lockout after N failed attempts |
-| **Audit Log** | Immutable, compliance-ready log for all auth events |
-| **REST API** | Full JSON REST API for login, refresh, logout, MFA, and API key management |
+A complete, production-grade **Subscription Management System** built for Odoo Make-A-Ton 9.0 by our 4-person engineering team.
 
 ---
 
-## 📂 Module Structure
+## 🏗️ Architecture & Team Ownership
 
-```
-auth_integration/
-├── __manifest__.py
-├── __init__.py
-├── models/
-│   ├── auth_token.py          # JWT + API key + refresh token management
-│   ├── auth_session.py        # Server-side session tracking
-│   ├── auth_oauth_provider.py # OAuth2 provider configuration
-│   ├── auth_audit_log.py      # Immutable audit log
-│   └── res_users_ext.py       # TOTP/MFA + brute-force extension
-├── controllers/
-│   ├── auth_controller.py     # REST: /api/auth/*
-│   └── oauth_controller.py    # OAuth2: /auth/oauth/*
-├── wizards/
-│   └── auth_revoke_wizard.py  # Bulk token revocation wizard
-├── views/
-│   ├── auth_token_views.xml
-│   ├── auth_session_views.xml
-│   ├── auth_oauth_views.xml
-│   ├── auth_audit_views.xml
-│   └── auth_menus.xml
-├── security/
-│   ├── ir.model.access.csv
-│   └── auth_security.xml
-└── data/
-    └── auth_data.xml          # Cron jobs + system parameters
-```
-
----
-
-## 🚀 REST API Reference
-
-### Authentication
-
-| Method | Endpoint | Description |
+| Member | Focus Area | Key Deliverables |
 |---|---|---|
-| `POST` | `/api/auth/login` | Password login → JWT + refresh token |
-| `POST` | `/api/auth/refresh` | Rotate refresh token → new access token |
-| `POST` | `/api/auth/logout` | Revoke token and terminate session |
-| `GET` | `/api/auth/verify` | Verify bearer token validity |
-| `GET` | `/api/auth/me` | Authenticated user profile |
-| `POST` | `/api/auth/api-key/create` | Generate scoped API key |
-| `POST` | `/api/auth/mfa/verify` | Verify TOTP OTP code |
-
-### OAuth2
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/auth/oauth/providers` | List active OAuth providers |
-| `GET` | `/auth/oauth/<id>/start` | Begin authorization code flow |
-| `GET` | `/auth/oauth/callback` | Handle provider callback |
+| **Member 1** | Auth, Database & Security | NextAuth & Express auth foundation, Prisma schema, session security, password reset, Odoo Python addon (`auth_integration/`) |
+| **Member 2** | Catalog & Subscriptions | Product catalog & variants, subscription plans, quotation templates, subscription state lifecycle machine (`src/app/api/products`, `src/app/api/plans`, `src/app/api/subscriptions`, `src/app/api/quotes`) |
+| **Member 3** | Billing & Finance | Recurring billing engine, automatic invoice generation, tax & discount engines, payments processing (`src/lib/billing`, `src/app/api/invoices`, `src/app/api/payments`) |
+| **Member 4** | Dashboard & Customer Portal | Executive KPIs, customer self-service portal, UI component kit, analytics & QA validation scripts (`components/ui`, `src/modules/dashboard`, `docs/`) |
 
 ---
 
-## 🔧 Quick Start
+## 🚀 Quick Start
 
-### 1. Install dependencies
-
+### 1. Configure Environment
 ```bash
-pip install PyJWT pyotp qrcode requests
+cp .env.example .env
+```
+Ensure `DATABASE_URL` points to your PostgreSQL database (or run `docker compose up -d`).
+
+### 2. Install Dependencies & Prepare Database
+```bash
+npm install
+npm run db:push
+npm run db:seed
 ```
 
-### 2. Install the module
-
+### 3. Run Development Server
 ```bash
-# Add to your Odoo addons path, then:
-./odoo-bin -d your_db -i auth_integration
+npm run dev
 ```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 3. Configure JWT Secret
-
-Go to **Settings → Technical → System Parameters** and update:
-- `auth_integration.jwt_secret` — Set a strong 256-bit secret
-
-### 4. Try the Login API
-
-```bash
-curl -X POST http://localhost:8069/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "admin", "password": "admin"}'
-```
-
-### 5. Use the token
-
-```bash
-curl http://localhost:8069/api/auth/me \
-  -H "Authorization: Bearer <your_access_token>"
-```
+**Default Seeded Logins** (Password: `Passw0rd!` or `Admin@123`):
+- Admin: `admin@brightloop.test`
+- Staff: `staff@brightloop.test`
+- Customer: `customer@brightloop.test`
 
 ---
 
-## 🔒 Security Architecture
+## 📦 Key Modules
 
-```
-Client
-  │
-  ├─ POST /api/auth/login ──────────────────────────────────────────────────┐
-  │         ↓ email + password (+ OTP if TOTP enabled)                       │
-  │         ↓ Brute-force check                                               │
-  │         ↓ res.users.authenticate()                                        │
-  │         ↓ pyotp.TOTP.verify()                                             │
-  │         ↓ JWT access token (HS256, 1hr TTL)                               │
-  │         ↓ Opaque refresh token (30d TTL)                                  │
-  │         ↓ auth.session created                                            │
-  │         ← { access_token, refresh_token, user }                          │
-  │                                                                           │
-  ├─ GET /api/auth/* ──────────────────────────────────────────────────────── │
-  │   Authorization: Bearer <access_token>                                    │
-  │         ↓ @require_bearer decorator                                       │
-  │         ↓ jwt.decode() → payload                                          │
-  │         ↓ DB lookup (token_hash, state=active)                            │
-  │         ↓ Update last_used_at                                             │
-  │         → Authorized                                                      │
-  │                                                                           │
-  └─ GET /auth/oauth/<id>/start → Provider → /auth/oauth/callback ──────────┘
-             PKCE code_verifier + code_challenge (S256)
-             CSRF state token in Odoo session
-```
+- **/products**: Product catalog, multi-attribute variants, additional pricing surcharges.
+- **/plans**: Recurring subscription plans (DAILY, WEEKLY, MONTHLY, YEARLY) with auto-close, pausable, and renewal policies.
+- **/subscriptions**: End-to-end lifecycle (`DRAFT` $\rightarrow$ `QUOTATION` $\rightarrow$ `CONFIRMED` $\rightarrow$ `ACTIVE` $\rightarrow$ `CLOSED`, `PAUSE`, `RESUME`, `RENEW`), with automatic `nextBillingDate` scheduling.
+- **/quotes**: Quotation templates with preset plans and product line bundles.
+- **/invoices & /payments**: Recurring billing execution, invoice life cycle (`DRAFT` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PAID`), tax rules, and discount calculation.
+- **/portal**: Customer self-service subscription & billing management.
+- **auth_integration/**: Odoo 17 Python addon for OAuth2, JWT sessions, TOTP/MFA, and audit logging.
 
 ---
 
-## 👥 Authors
-
-- **abishek55290** — [github.com/abishek55290](https://github.com/abishek55290)
-
----
-
-## 📄 License
-
-LGPL-3.0 — see [LICENSE](LICENSE) for details.
+## 🧪 Testing & Verification
+- Test all billing operations: `npx tsx tests/billing.test.ts`
+- Test subscription lifecycle: `npx tsx tests/catalog-subscriptions.test.ts`
+- Test dashboard endpoints: `npx tsx scripts/test-qa.ts`

@@ -1,205 +1,175 @@
-/**
- * Database Seed Script — Odoo Hackathon
- * ======================================
- * Run:  npm run db:seed
- *
- * Creates demo data for development/testing ONLY.
- * ⚠️  NEVER use these credentials in production.
- *
- * Accounts created:
- *   admin@demo.dev      / Admin@12345!
- *   staff@demo.dev      / Staff@12345!
- *   customer1@demo.dev  / Customer@123!
- *   customer2@demo.dev  / Customer@456!
- */
+import { PrismaClient, Role, BillingPeriod, SubscriptionStatus, InvoiceStatus } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
-import { PrismaClient, Role } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
-import path from 'path';
+const db = new PrismaClient();
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+async function hash(pw: string) {
+  return bcrypt.hash(pw, 10);
+}
 
-const prisma = new PrismaClient();
-const SALT_ROUNDS = 12;
-
-async function hashPassword(plain: string): Promise<string> {
-  return bcrypt.hash(plain, SALT_ROUNDS);
+async function upsertUser(email: string, name: string, role: Role, firstName?: string, lastName?: string, customPw?: string) {
+  const passwordHash = await hash(customPw || "Passw0rd!");
+  return db.user.upsert({
+    where: { email },
+    update: { name, role, firstName, lastName },
+    create: { email, name, role, firstName, lastName, passwordHash },
+  });
 }
 
 async function main() {
-  console.log('🌱  Starting database seed…\n');
+  console.log("🌱  Seeding Brightloop database...");
 
-  // ── Clean slate (safe for re-running) ──────────────────────────────────
-  await prisma.invoice.deleteMany();
-  await prisma.subscription.deleteMany();
-  await prisma.passwordResetToken.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.product.deleteMany();
+  // Primary team demo users
+  const admin = await upsertUser("admin@brightloop.test", "Admin User", Role.ADMIN, "Alice", "Admin");
+  const staff = await upsertUser("staff@brightloop.test", "Staff User", Role.STAFF, "Sam", "Staff");
+  const customer = await upsertUser("customer@brightloop.test", "Demo Customer", Role.CUSTOMER, "Charlie", "Customer");
 
-  console.log('   ✓ Cleared existing data');
+  // Additional demo users
+  await upsertUser("admin@demo.dev", "Alice Admin", Role.ADMIN, "Alice", "Admin", "Admin@12345!");
+  await upsertUser("staff@demo.dev", "Sam Staff", Role.STAFF, "Sam", "Staff", "Staff@12345!");
+  await upsertUser("customer1@demo.dev", "Charlie Customer", Role.CUSTOMER, "Charlie", "One", "Customer@123!");
+  await upsertUser("customer2@demo.dev", "Diana Customer", Role.CUSTOMER, "Diana", "Two", "Customer@456!");
 
-  // ── Users ───────────────────────────────────────────────────────────────
-  const [admin, staff, customer1, customer2] = await Promise.all([
-    prisma.user.create({
-      data: {
-        email: 'admin@demo.dev',
-        passwordHash: await hashPassword('Admin@12345!'),
-        firstName: 'Alice',
-        lastName: 'Admin',
-        role: Role.ADMIN,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'staff@demo.dev',
-        passwordHash: await hashPassword('Staff@12345!'),
-        firstName: 'Sam',
-        lastName: 'Staff',
-        role: Role.STAFF,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'customer1@demo.dev',
-        passwordHash: await hashPassword('Customer@123!'),
-        firstName: 'Charlie',
-        lastName: 'One',
-        role: Role.CUSTOMER,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'customer2@demo.dev',
-        passwordHash: await hashPassword('Customer@456!'),
-        firstName: 'Diana',
-        lastName: 'Two',
-        role: Role.CUSTOMER,
-      },
-    }),
-  ]);
+  console.log("   ✓ Users seeded");
 
-  console.log('   ✓ Users created');
-  console.table([
-    { email: admin.email,     role: admin.role,     id: admin.id },
-    { email: staff.email,     role: staff.role,     id: staff.id },
-    { email: customer1.email, role: customer1.role, id: customer1.id },
-    { email: customer2.email, role: customer2.role, id: customer2.id },
-  ]);
+  // Taxes
+  let gst = await db.tax.findFirst({ where: { name: "GST 18%" } });
+  if (!gst) {
+    gst = await db.tax.create({
+      data: { name: "GST 18%", ratePercent: 18, active: true },
+    });
+  }
 
-  // ── Products ─────────────────────────────────────────────────────────────
-  const [basicPlan, proPlan, enterprisePlan] = await Promise.all([
-    prisma.product.create({
+  // Products & Variants
+  let crm = await db.product.findFirst({ where: { name: "Brightloop CRM" } });
+  if (!crm) {
+    crm = await db.product.create({
       data: {
-        name: 'Basic Plan',
-        description: 'Core features for small teams',
-        priceMonthly: 29.00,
-        priceAnnual: 290.00,
+        name: "Brightloop CRM",
+        type: "Software",
+        salesPrice: 1000,
+        costPrice: 400,
+        description: "Complete subscription and customer CRM platform",
+        taxId: gst.id,
       },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'Professional Plan',
-        description: 'Advanced features with priority support',
-        priceMonthly: 79.00,
-        priceAnnual: 790.00,
-      },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'Enterprise Plan',
-        description: 'Unlimited everything with dedicated support',
-        priceMonthly: 299.00,
-        priceAnnual: 2990.00,
-      },
-    }),
-  ]);
+    });
 
-  console.log('\n   ✓ Products created');
-  console.table([
-    { name: basicPlan.name,      monthly: `$${basicPlan.priceMonthly}`,      id: basicPlan.id },
-    { name: proPlan.name,        monthly: `$${proPlan.priceMonthly}`,        id: proPlan.id },
-    { name: enterprisePlan.name, monthly: `$${enterprisePlan.priceMonthly}`, id: enterprisePlan.id },
-  ]);
+    await db.productVariant.create({
+      data: { productId: crm.id, attribute: "Brand", value: "Odoo", extraPrice: 560 },
+    });
+  }
 
-  // ── Subscriptions ─────────────────────────────────────────────────────────
-  const [sub1, sub2] = await Promise.all([
-    prisma.subscription.create({
+  // Plans
+  let monthlyPlan = await db.plan.findFirst({ where: { name: "Monthly Standard" } });
+  if (!monthlyPlan) {
+    monthlyPlan = await db.plan.create({
       data: {
-        userId: customer1.id,
-        productId: basicPlan.id,
-        status: 'ACTIVE',
-        startDate: new Date('2026-01-01'),
+        name: "Monthly Standard",
+        price: 1000,
+        period: BillingPeriod.MONTHLY,
+        startDate: new Date(),
+        pausable: true,
+        closable: true,
+        renewable: true,
       },
-    }),
-    prisma.subscription.create({
-      data: {
-        userId: customer2.id,
-        productId: proPlan.id,
-        status: 'ACTIVE',
-        startDate: new Date('2026-03-15'),
-      },
-    }),
-  ]);
+    });
+  }
 
-  console.log('\n   ✓ Subscriptions created');
-
-  // ── Invoices ──────────────────────────────────────────────────────────────
-  await Promise.all([
-    prisma.invoice.create({
+  let yearlyPlan = await db.plan.findFirst({ where: { name: "Yearly Enterprise" } });
+  if (!yearlyPlan) {
+    yearlyPlan = await db.plan.create({
       data: {
-        userId: customer1.id,
-        subscriptionId: sub1.id,
-        invoiceNumber: 'INV-2026-0001',
-        status: 'PAID',
-        amountDue: 29.00,
-        amountPaid: 29.00,
-        dueDate: new Date('2026-02-01'),
-        paidAt: new Date('2026-01-30'),
-        notes: 'January 2026 — Basic Plan',
+        name: "Yearly Enterprise",
+        price: 10000,
+        period: BillingPeriod.YEARLY,
+        startDate: new Date(),
+        pausable: true,
+        closable: true,
+        renewable: true,
       },
-    }),
-    prisma.invoice.create({
-      data: {
-        userId: customer2.id,
-        subscriptionId: sub2.id,
-        invoiceNumber: 'INV-2026-0002',
-        status: 'SENT',
-        amountDue: 79.00,
-        amountPaid: 0,
-        dueDate: new Date('2026-04-15'),
-        notes: 'April 2026 — Professional Plan',
-      },
-    }),
-    prisma.invoice.create({
-      data: {
-        userId: customer1.id,
-        subscriptionId: sub1.id,
-        invoiceNumber: 'INV-2026-0003',
-        status: 'DRAFT',
-        amountDue: 29.00,
-        amountPaid: 0,
-        dueDate: new Date('2026-11-01'),
-        notes: 'November 2026 — Basic Plan',
-      },
-    }),
-  ]);
+    });
+  }
 
-  console.log('   ✓ Invoices created');
+  // Discounts
+  const discountExists = await db.discount.findFirst({ where: { name: "10% off 10+ seats" } });
+  if (!discountExists) {
+    await db.discount.create({
+      data: {
+        name: "10% off 10+ seats",
+        type: "PERCENTAGE",
+        value: 10,
+        minQuantity: 10,
+        startDate: new Date(),
+        usageLimit: 100,
+        scope: "PRODUCT",
+        productId: crm.id,
+      },
+    });
+  }
 
-  console.log('\n✅  Seed complete!\n');
-  console.log('Demo login credentials (DEV ONLY):');
-  console.log('  ADMIN    → admin@demo.dev       / Admin@12345!');
-  console.log('  STAFF    → staff@demo.dev        / Staff@12345!');
-  console.log('  CUSTOMER → customer1@demo.dev   / Customer@123!');
-  console.log('  CUSTOMER → customer2@demo.dev   / Customer@456!');
+  // Demo Subscriptions
+  let demoSub = await db.subscription.findUnique({ where: { number: "SUB-0001" } });
+  if (!demoSub) {
+    demoSub = await db.subscription.create({
+      data: {
+        number: "SUB-0001",
+        customerId: customer.id,
+        planId: monthlyPlan.id,
+        status: SubscriptionStatus.ACTIVE,
+        startDate: new Date(),
+        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        paymentTerms: "Net 15",
+        lines: {
+          create: [
+            {
+              productId: crm.id,
+              quantity: 5,
+              unitPrice: 1000,
+              amount: 5000,
+              taxId: gst.id,
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  // Demo Invoices
+  let demoInv = await db.invoice.findUnique({ where: { number: "INV-0001" } });
+  if (!demoInv) {
+    demoInv = await db.invoice.create({
+      data: {
+        number: "INV-0001",
+        subscriptionId: demoSub.id,
+        customerId: customer.id,
+        status: InvoiceStatus.CONFIRMED,
+        periodStart: new Date(),
+        periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+        subtotal: 5000,
+        taxTotal: 900,
+        total: 5900,
+        lines: {
+          create: [
+            {
+              description: "Brightloop CRM x 5 seats",
+              quantity: 5,
+              unitPrice: 1000,
+              taxPercent: 18,
+              amount: 5000,
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  console.log("✅  Seed completed successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error("❌ Seed failed:", e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .finally(() => db.$disconnect());
