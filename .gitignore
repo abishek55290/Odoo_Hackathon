@@ -4,3 +4,8 @@ node_modules
 *.tsbuildinfo
 next-env.d.ts
 .remember
+
+*.db
+*.db-journal
+*.db-wal
+

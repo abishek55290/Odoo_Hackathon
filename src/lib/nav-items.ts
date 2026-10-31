@@ -6,6 +6,7 @@ export const navItems: { href: string; label: string; roles: Role[] }[] = [
   { href: "/products", label: "Products", roles: ["ADMIN", "STAFF"] },
   { href: "/plans", label: "Plans", roles: ["ADMIN", "STAFF"] },
   { href: "/subscriptions", label: "Subscriptions", roles: ["ADMIN", "STAFF"] },
+  { href: "/quotes", label: "Quotation Templates", roles: ["ADMIN", "STAFF"] },
   { href: "/invoices", label: "Invoices", roles: ["ADMIN", "STAFF"] },
   { href: "/payments", label: "Payments", roles: ["ADMIN", "STAFF"] },
   { href: "/portal", label: "My subscriptions", roles: ["CUSTOMER"] },
