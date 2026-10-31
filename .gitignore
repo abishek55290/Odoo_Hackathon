@@ -24,3 +24,9 @@ Thumbs.db
 
 # ─── Test coverage ────────────────────────────────────────────────────────────
 coverage/
+
+.next/
+pgdata/
+logfile
+next-env.d.ts
+*.tsbuildinfo

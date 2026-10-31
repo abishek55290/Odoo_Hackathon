@@ -13,7 +13,7 @@ import authRouter from '@/modules/auth/auth.routes';
 // Members 2/3/4 will add their routers here:
 // import subscriptionsRouter from '@/modules/subscriptions/subscriptions.routes';
 // import invoicesRouter from '@/modules/invoices/invoices.routes';
-// import dashboardRouter from '@/modules/dashboard/dashboard.routes';
+import dashboardRouter from '@/modules/dashboard/dashboard.routes';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Session store
@@ -93,7 +93,8 @@ export function createApp() {
   app.use('/api/auth', authRouter);
   // app.use('/api/subscriptions', subscriptionsRouter);  // Member 2
   // app.use('/api/invoices', invoicesRouter);            // Member 3
-  // app.use('/api/dashboard', dashboardRouter);          // Member 4
+  app.use('/api/dashboard', dashboardRouter);
+  app.use('/api/portal', dashboardRouter); // Member 4
 
   // ── 404 & Error handlers ─────────────────────────────────────────────────
   app.use(notFoundHandler);
@@ -101,3 +102,5 @@ export function createApp() {
 
   return app;
 }
+
+
